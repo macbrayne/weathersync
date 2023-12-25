@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "weathersync",
+  "version": "${version}",
+  "name": "weathersync",
+  "description": "",
+  "authors": ["macbrayne"],
+  "contact": {
+    "repo": "https://github.com/macbrayne/weathersync"
+  },
+  "license": "EUPL-1.2",
+  "icon": "assets/weathersync/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "de.macbrayne.fabric.weathersync.WeatherSync"
+    ],
+    "cardinal-components": [
+      "de.macbrayne.fabric.weathersync.components.Components"
+    ]
+  },
+  "mixins": [
+    "weathersync.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  },
+
+  "custom": {
+    "cardinal-components": [
+      "weathersync:location"
+    ]
+  }
+}
