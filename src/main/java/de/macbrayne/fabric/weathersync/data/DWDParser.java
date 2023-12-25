@@ -53,8 +53,8 @@ public class DWDParser {
         } else if (!weatherData.isRaining() && isRaining) {
             connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
         }
-        connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, weatherData.isThundering() ? 1.0F : 0.0F));
-        connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, weatherData.isRaining() ? 1.0F : 0.0F));
+        connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, weatherData.thunderLevel()));
+        connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, weatherData.precipitationLevel()));
         player.sendSystemMessage(Component.literal("Your weather has been synced with the real world!"));
         player.sendSystemMessage(Component.literal("It's " + (weatherData.isRaining() ? "raining" : "not raining") +
                 " and " + (weatherData.isThundering() ? "thundering" : "not thundering") +

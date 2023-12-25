@@ -1,6 +1,7 @@
 package de.macbrayne.fabric.weathersync.mixin;
 
 import de.macbrayne.fabric.weathersync.data.DWDParser;
+import de.macbrayne.fabric.weathersync.state.SyncState;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
@@ -34,12 +35,18 @@ public abstract class ServerLevelMixin extends Level implements
 
     @Inject(method = "advanceWeatherCycle()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/protocol/game/ClientboundGameEventPacket;<init>(Lnet/minecraft/network/protocol/game/ClientboundGameEventPacket$Type;F)V", ordinal = 0), locals = LocalCapture.CAPTURE_FAILEXCEPTION, cancellable = true)
     private void doGeoWeather(CallbackInfo ci, boolean wasRaining) {
+        ci.cancel();
         if(wasRaining != this.isRaining()) {
+            SyncState state = SyncState.getServerState(this.getServer());
+            if(state.lastSync + 1.8e6 < System.currentTimeMillis()) {
+                return;
+            }
+            state.lastSync = System.currentTimeMillis();
+            state.setDirty();
             for (ServerPlayer player : this.getServer().getPlayerList().getPlayers()) {
                 DWDParser parser = new DWDParser(player);
                 parser.request(player);
             }
         }
-        ci.cancel();
     }
 }
