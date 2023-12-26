@@ -1,6 +1,24 @@
 package de.macbrayne.fabric.weathersync.data;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+
 public record WeatherData(String latitude, String longitude, boolean isRaining, boolean isThundering, float precipitationLevel, float thunderLevel) {
+    public static final Codec<WeatherData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.STRING.fieldOf("latitude").forGetter(WeatherData::latitude),
+            Codec.STRING.fieldOf("longitude").forGetter(WeatherData::longitude),
+            Codec.BOOL.fieldOf("isRaining").forGetter(WeatherData::isRaining),
+            Codec.BOOL.fieldOf("isThundering").forGetter(WeatherData::isThundering),
+            Codec.FLOAT.fieldOf("precipitationLevel").forGetter(WeatherData::precipitationLevel),
+            Codec.FLOAT.fieldOf("thunderLevel").forGetter(WeatherData::thunderLevel)
+    ).apply(instance, WeatherData::new));
+
+    public WeatherData withLocation(String latitude, String longitude) {
+        return new WeatherData(latitude, longitude, this.isRaining, this.isThundering, this.precipitationLevel, this.thunderLevel);
+    }
+
     public static WeatherData fromCode(String latitude, String longitude, int weatherCode) {
         boolean isRaining = weatherCode < 95 && weatherCode >= 50;
         boolean isThundering = weatherCode >= 95;
@@ -22,5 +40,15 @@ public record WeatherData(String latitude, String longitude, boolean isRaining, 
             default -> 0F;
         };
         return new WeatherData(latitude, longitude, isRaining, isThundering, precipitationLevel, thunderLevel);
+    }
+
+    public void send(ServerGamePacketListenerImpl connection, boolean isRaining) {
+        if(isRaining() && !isRaining) {
+            connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
+        } else if (isRaining() && isRaining) {
+            connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
+        }
+        connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, thunderLevel()));
+        connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, precipitationLevel()));
     }
 }

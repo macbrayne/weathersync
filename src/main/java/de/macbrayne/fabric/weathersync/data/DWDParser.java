@@ -5,7 +5,6 @@ import de.macbrayne.fabric.weathersync.components.Components;
 import de.macbrayne.fabric.weathersync.components.LocationComponent;
 import de.macbrayne.fabric.weathersync.mixin.ServerPlayerAccessor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.slf4j.Logger;
@@ -17,15 +16,18 @@ import java.net.http.HttpResponse;
 
 public class DWDParser {
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("weathersync");
-    private String latitude;
-    private String longitude;
-    private boolean isRaining;
-    private boolean isThundering;
+    private final String latitude;
+    private final String longitude;
+    private final boolean isRaining;
+    private final boolean isThundering;
 
     public DWDParser(ServerPlayer player) {
         LocationComponent location = Components.LOCATION.get(player);
-        this.latitude = location.getLatitude();
-        this.longitude = location.getLongitude();
+        if(location.getWeatherData() == null) {
+            location.setWeatherData(WeatherData.fromCode("51.5344", "9.9349", 0));
+        }
+        this.latitude = location.getWeatherData().latitude();
+        this.longitude = location.getWeatherData().longitude();
         this.isRaining = player.level().isRaining();
         this.isThundering = player.level().isThundering();
     }
@@ -48,13 +50,12 @@ public class DWDParser {
         LOGGER.debug("Updating Client Weather: It's " + (weatherData.isRaining() ? "raining" : "not raining") +
                 " and " + (weatherData.isThundering() ? "thundering" : "not thundering") +
                 " at " + player.getName().getString() + "'s location (weather code " + weatherCode + ")");
-        if(weatherData.isRaining() && !isRaining) {
-            connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
-        } else if (!weatherData.isRaining() && isRaining) {
-            connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
-        }
-        connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, weatherData.thunderLevel()));
-        connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, weatherData.precipitationLevel()));
+
+        weatherData.send(connection, isRaining);
+
+        LocationComponent location = Components.LOCATION.get(player);
+        location.setWeatherData(weatherData);
+
         player.sendSystemMessage(Component.literal("Your weather has been synced with the real world!"));
         player.sendSystemMessage(Component.literal("It's " + (weatherData.isRaining() ? "raining" : "not raining") +
                 " and " + (weatherData.isThundering() ? "thundering" : "not thundering") +

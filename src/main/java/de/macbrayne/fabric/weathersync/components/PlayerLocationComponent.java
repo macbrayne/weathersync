@@ -1,50 +1,46 @@
 package de.macbrayne.fabric.weathersync.components;
 
+import de.macbrayne.fabric.weathersync.data.WeatherData;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import org.slf4j.Logger;
 
 public class PlayerLocationComponent implements LocationComponent {
-    private String latitude = "52.5162", longitude = "13.3777";
+    private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("weathersync");
+    private WeatherData weatherData = null;
     private boolean enabled = false;
 
     @Override
     public void readFromNbt(CompoundTag tag) {
-        latitude = tag.getString("latitude");
-        longitude = tag.getString("longitude");
-        enabled = tag.getBoolean("enabled");
+        if(!tag.getCompound("weatherData").isEmpty()) {
+            setWeatherData(WeatherData.CODEC.parse(NbtOps.INSTANCE, tag.getCompound("weatherData")).getOrThrow(true, LOGGER::error));
+        }
+        setEnabled(tag.getBoolean("enabled"));
     }
 
     @Override
     public void writeToNbt(CompoundTag tag) {
-        tag.putString("latitude", latitude);
-        tag.putString("longitude", longitude);
-        tag.putBoolean("enabled", enabled);
+        if(getWeatherData() != null) {
+            tag.put("weatherData", WeatherData.CODEC.encodeStart(NbtOps.INSTANCE, getWeatherData()).getOrThrow(false, LOGGER::error));
+        }
+        tag.putBoolean("enabled", isEnabled());
+    }
+
+
+    @Override
+    public void setWeatherData(WeatherData weatherData) {
+        this.weatherData = weatherData;
     }
 
     @Override
-    public void setLatitude(String latitude) {
-        this.latitude = latitude;
-    }
-
-    @Override
-    public void setLongitude(String longitude) {
-        this.longitude = longitude;
+    public WeatherData getWeatherData() {
+        return weatherData;
     }
 
     @Override
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-
-    @Override
-    public String getLatitude() {
-        return this.latitude;
-    }
-
-    @Override
-    public String getLongitude() {
-        return this.longitude;
-    }
-
     @Override
     public boolean isEnabled() {
         return enabled;

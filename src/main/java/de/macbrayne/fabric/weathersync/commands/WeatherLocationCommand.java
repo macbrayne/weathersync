@@ -19,8 +19,8 @@ public class WeatherLocationCommand {
                                                 .executes(ctx -> {
                                                     Double latitude = ctx.getArgument("latitude", Double.class);
                                                     Double longitude = ctx.getArgument("longitude", Double.class);
-                                                    Components.LOCATION.get(ctx.getSource().getPlayer()).setLatitude(latitude.toString());
-                                                    Components.LOCATION.get(ctx.getSource().getPlayer()).setLongitude(longitude.toString());
+                                                    var locationComponent = Components.LOCATION.get(ctx.getSource().getPlayer());
+                                                    locationComponent.setWeatherData(locationComponent.getWeatherData().withLocation(latitude.toString(), longitude.toString()));
                                                     ctx.getSource().sendSuccess(() -> Component.literal("Successfully set location to " + latitude + ", " + longitude), false);
                                                     return 1;
                                                 })
@@ -38,8 +38,8 @@ public class WeatherLocationCommand {
                 ).then(Commands.literal("get")
                         .then(Commands.literal("location")
                                 .executes(ctx -> {
-                                    String latitude = Components.LOCATION.get(ctx.getSource().getPlayer()).getLatitude();
-                                    String longitude = Components.LOCATION.get(ctx.getSource().getPlayer()).getLongitude();
+                                    String latitude = Components.LOCATION.get(ctx.getSource().getPlayer()).getWeatherData().latitude();
+                                    String longitude = Components.LOCATION.get(ctx.getSource().getPlayer()).getWeatherData().longitude();
                                     ctx.getSource().sendSuccess(() -> Component.literal("Location: " + latitude + ", " + longitude), false);
                                     return 1;
                                 }))
