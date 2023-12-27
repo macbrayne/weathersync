@@ -29,7 +29,7 @@ public class SyncState extends SavedData {
 
     public static SyncState getServerState(MinecraftServer server) {
         DimensionDataStorage storage = server.getLevel(Level.OVERWORLD).getDataStorage();
-        SyncState state = storage.get(TYPE, "weathersync");
+        SyncState state = storage.computeIfAbsent(TYPE, "weathersync");
         return state;
     }
 }
