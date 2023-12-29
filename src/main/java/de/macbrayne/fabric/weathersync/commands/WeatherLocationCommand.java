@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import de.macbrayne.fabric.weathersync.components.Components;
+import de.macbrayne.fabric.weathersync.state.SyncState;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -34,8 +35,8 @@ public class WeatherLocationCommand {
                                             ctx.getSource().sendSuccess(() -> Component.literal("Successfully set enabled to " + enabled), false);
                                             return 1;
                                         })
-                                ))
-                ).then(Commands.literal("get")
+                                )))
+                .then(Commands.literal("get")
                         .then(Commands.literal("location")
                                 .executes(ctx -> {
                                     String latitude = Components.LOCATION.get(ctx.getSource().getPlayer()).getWeatherData().latitude();
@@ -49,7 +50,28 @@ public class WeatherLocationCommand {
                                     ctx.getSource().sendSuccess(() -> Component.literal("Enabled: " + enabled), false);
                                     return 1;
                                 })
-                        )
+                        ))
+                .then(Commands.literal("sync")
+                        .requires(source -> {
+                            var locationComponent = Components.LOCATION.get(source.getPlayer());
+                            return locationComponent.isEnabled();
+                        })
+                        .executes(ctx -> {
+                            var locationComponent = Components.LOCATION.get(ctx.getSource().getPlayer());
+                            if(locationComponent.isEnabled()) {
+                                locationComponent.getWeatherData().send(ctx.getSource().getPlayer());
+                            }
+                            return 1;
+                        }))
+                .then(Commands.literal("timer")
+                        .requires(source -> source.hasPermission(2))
+                        .then(Commands.literal("reset"))
+                        .executes(ctx -> {
+                            SyncState state = SyncState.getServerState(ctx.getSource().getServer());
+                            state.lastSync = -1;
+                            state.setDirty();
+                            return 1;
+                        })
                 )
         );
     }

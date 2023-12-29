@@ -7,6 +7,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.DimensionDataStorage;
 
 public class SyncState extends SavedData {
+    public static SyncState reference = null;
     private static SavedData.Factory<SyncState> TYPE = new SavedData.Factory<>(SyncState::new, SyncState::fromNbt, null);
     public long lastSync = -1;
     public String defaultLatitude = "52.5162";
@@ -24,12 +25,14 @@ public class SyncState extends SavedData {
         syncState.lastSync = compoundTag.getLong("lastSync");
         syncState.defaultLatitude = compoundTag.getString("defaultLatitude");
         syncState.defaultLongitude = compoundTag.getString("defaultLongitude");
+        reference = syncState;
         return syncState;
     }
 
     public static SyncState getServerState(MinecraftServer server) {
         DimensionDataStorage storage = server.getLevel(Level.OVERWORLD).getDataStorage();
         SyncState state = storage.computeIfAbsent(TYPE, "weathersync");
+        reference = state;
         return state;
     }
 }
