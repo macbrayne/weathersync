@@ -1,0 +1,68 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+# Builds and tests the project
+
+name: Build
+
+# On pull requests
+on:
+  push:
+    paths:
+      - '**/src/**'
+      - '**/libs.versions.toml'
+      - '**/build.gradle'
+      - '**/gradle.properties'
+      - '**/settings.gradle'
+      - .github/workflows/build.yml
+      - LICENCE
+  pull_request:
+    paths:
+      - '**/src/**'
+      - '**/libs.versions.toml'
+      - '**/build.gradle'
+      - '**/gradle.properties'
+      - '**/settings.gradle'
+      - .github/workflows/build.yml
+      - LICENCE
+      
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    strategy:
+      matrix:
+        gradle-version: [wrapper, release-candidate]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ✨ Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🛂 Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: 🏗 Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: 🤗 Setup Gradle and build artifacts
+        uses: gradle/gradle-build-action@bd5760595778326ba7f1441bcf7e88b49de61a25 # 2.6.0
+        with:
+          gradle-version: ${{ matrix.gradle-version }}
+          arguments: build
+
+      - name: 📦 Upload artifacts
+        uses: actions/upload-artifact@v3
+        if: always() # always run even if the previous step fails
+        with:
+          name: artifacts
+          path: '**/build/libs/'
