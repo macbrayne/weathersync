@@ -9,11 +9,12 @@ It queries the OpenMeteo API to find out the weather at the provided location :)
 
 ## Configuration
 
-This mod provides a bunch of ingame commands:
-- `/weathersync set enabled <true|false>`: Enables/disables the mod for you
-- `/weathersync set location <latitude> <longitude>`: Sets the location the mod queries to the latitude and longitude you provide (default: Berlin)
+This mod provides a bunch of in-game commands:
+- `/weathersync enable`: Enables the mod for you
+- `/weathersync disable`: Disables the mod for you
+- `/weathersync location set <latitude> <longitude>`: Sets the location the mod queries to the latitude and longitude you provide (default: Berlin)
 - `/weathersync sync`: Forces the game to send you your stored weather
-- `/weathersync timer reset` (OP level 2 required): Resets the 30 minute timer which aims to prevent excessive API requests
+- `/weathersync timer reset` (OP level 2 required): Resets the 30-minute timer which aims to prevent excessive API requests
 
 **Please open an issue if it doesn't properly sync and you don't get the weather described in the message to you**
 

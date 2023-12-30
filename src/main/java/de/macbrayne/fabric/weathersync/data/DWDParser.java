@@ -12,6 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 public class DWDParser {
+    private static final String API_BACKEND = System.getProperty("weathersync.api-backend", "https://api.open-meteo.com/v1/dwd-icon");
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("weathersync");
     private final String latitude;
     private final String longitude;
@@ -33,7 +34,7 @@ public class DWDParser {
         LOGGER.debug("Uh oh, " + player.getName().getString() + " wants to know the weather!");
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.open-meteo.com/v1/dwd-icon?latitude=" + latitude + "&longitude=" + longitude + "&current=precipitation,weather_code&timezone=GMT"))
+                .uri(URI.create(API_BACKEND + "?latitude=" + latitude + "&longitude=" + longitude + "&current=weather_code&timezone=GMT"))
                 .build();
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(player, s, isThundering, isRaining));
     }

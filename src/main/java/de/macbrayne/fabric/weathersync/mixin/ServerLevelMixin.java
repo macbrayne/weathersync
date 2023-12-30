@@ -49,7 +49,7 @@ public abstract class ServerLevelMixin extends Level implements
         if(wasRaining != this.isRaining()) {
 
             SyncState state = SyncState.getServerState(this.getServer());
-            boolean doNewSync = state.lastSync + 1.8e6 > System.currentTimeMillis();
+            boolean doNewSync = state.lastSync + 1.8e6 > System.currentTimeMillis() || state.lastSync == -1;
             for (ServerPlayer player : this.getServer().getPlayerList().getPlayers()) {
                 LocationComponent location = Components.LOCATION.get(player);
                 if (!location.isEnabled()) {
