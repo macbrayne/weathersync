@@ -44,8 +44,7 @@ public record WeatherData(String latitude, String longitude, boolean isRaining, 
 
 
         player.sendSystemMessage(Component.literal("Your weather has been synced with the real world!"));
-        player.sendSystemMessage(Component.literal("It's " + (isRaining() ? "raining" : "not raining") +
-                " and " + (isThundering() ? "thundering" : "not thundering") +
-                " at your location"));
+        String suffix = isThundering() ? "thunder" : (isRaining() ? "rain" : "clear");
+        player.sendSystemMessage(Component.translatable("chat.weathersync.status", Component.translatable("chat.weathersync.status." + suffix)));
     }
 }
