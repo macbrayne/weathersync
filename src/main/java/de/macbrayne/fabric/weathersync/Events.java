@@ -7,11 +7,8 @@ import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Events {
-    private static final Logger LOGGER = LoggerFactory.getLogger("weathersync");
     static void onPlayReady(ServerGamePacketListenerImpl handler, PacketSender sender, MinecraftServer server) {
         LocationComponent location = Components.LOCATION.get(handler.player);
         if(location.isEnabled()) {

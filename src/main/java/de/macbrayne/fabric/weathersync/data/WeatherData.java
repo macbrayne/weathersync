@@ -36,7 +36,7 @@ public record WeatherData(String latitude, String longitude, boolean isRaining, 
         ServerGamePacketListenerImpl connection = player.connection;
         if(isRaining()) {
             connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
-        } else if (!isRaining()) {
+        } else {
             connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
         }
         connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, thunderLevel()));

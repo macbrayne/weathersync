@@ -1,14 +1,9 @@
 package de.macbrayne.fabric.weathersync.data;
 
-import com.google.common.collect.Maps;
-import it.unimi.dsi.fastutil.ints.*;
-
-import java.util.Arrays;
 import java.util.Map;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * WMO Codes according to <a href="https://www.nodc.noaa.gov/archive/arc0021/0002199/1.1/data/0-data/HTML/WMO-CODE/WMO4677.HTM">nodc.noaa.gov</a>
@@ -32,10 +27,10 @@ public enum WeatherCode {
     HEAVY_THUNDERSTORM(code -> code >= 98, 1.F, 1F);
 
 
-    private IntPredicate values;
-    private float rainLevel, thunderLevel;
+    private final IntPredicate values;
+    private final float rainLevel, thunderLevel;
 
-    private static Map<Integer, WeatherCode> LOOKUP = IntStream.range(0, 100).boxed().collect(Collectors.toMap(i -> i, WeatherCode::fromCode));
+    private final static Map<Integer, WeatherCode> LOOKUP = IntStream.range(0, 100).boxed().collect(Collectors.toMap(i -> i, WeatherCode::fromCode));
     WeatherCode(IntPredicate values, float rainLevel, float thunderLevel) {
         this.values = values;
         this.rainLevel = rainLevel;

@@ -16,8 +16,6 @@ public class DWDParser {
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("weathersync");
     private final String latitude;
     private final String longitude;
-    private final boolean isRaining;
-    private final boolean isThundering;
 
     public DWDParser(ServerPlayer player) {
         LocationComponent location = Components.LOCATION.get(player);
@@ -26,8 +24,6 @@ public class DWDParser {
         }
         this.latitude = location.getWeatherData().latitude();
         this.longitude = location.getWeatherData().longitude();
-        this.isRaining = player.level().isRaining();
-        this.isThundering = player.level().isThundering();
     }
 
     public void request(ServerPlayer player) {
@@ -36,10 +32,10 @@ public class DWDParser {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_BACKEND + "?latitude=" + latitude + "&longitude=" + longitude + "&current=weather_code&timezone=GMT"))
                 .build();
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(player, s, isThundering, isRaining));
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(player, s));
     }
 
-    private static void parse(ServerPlayer player, String json, boolean wasThundering, boolean isRaining) {
+    private static void parse(ServerPlayer player, String json) {
         var root = JsonParser.parseString(json);
         var current = root.getAsJsonObject().get("current");
         var weatherCode = current.getAsJsonObject().get("weather_code").getAsInt();

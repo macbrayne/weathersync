@@ -8,7 +8,7 @@ import net.minecraft.world.level.storage.DimensionDataStorage;
 
 public class SyncState extends SavedData {
     public static SyncState reference = null;
-    private static SavedData.Factory<SyncState> TYPE = new SavedData.Factory<>(SyncState::new, SyncState::fromNbt, null);
+    private static final SavedData.Factory<SyncState> TYPE = new SavedData.Factory<>(SyncState::new, SyncState::fromNbt, null);
     public long lastSync = -1;
     public String defaultLatitude = "52.5162";
     public String defaultLongitude = "13.3777";
