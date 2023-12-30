@@ -66,10 +66,10 @@ public abstract class ServerLevelMixin extends Level implements
                 }
             }
             if (!doNewSync) {
-                LOGGER.error("Not syncing weather with real world");
+                LOGGER.debug("Not syncing weather with real world");
                 return;
             }
-            LOGGER.error("Syncing weather with real world");
+            LOGGER.debug("Syncing weather with real world");
             state.lastSync = System.currentTimeMillis();
             state.setDirty();
             for (ServerPlayer player : this.getServer().getPlayerList().getPlayers()) {

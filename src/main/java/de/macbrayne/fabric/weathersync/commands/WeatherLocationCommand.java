@@ -6,10 +6,13 @@ import de.macbrayne.fabric.weathersync.Util;
 import de.macbrayne.fabric.weathersync.components.Components;
 import de.macbrayne.fabric.weathersync.data.DWDParser;
 import de.macbrayne.fabric.weathersync.state.SyncState;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 
 public class WeatherLocationCommand {
     public static void register(CommandDispatcher<CommandSourceStack> commandSourceStackCommandDispatcher, CommandBuildContext commandBuildContext, Commands.CommandSelection commandSelection) {
@@ -85,7 +88,16 @@ public class WeatherLocationCommand {
                             }
                             locationComponent.setEnabled(false);
                             ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.disable"), false);
-                            Util.sendVanilla(ctx.getSource().getPlayer());
+                            Util.sendVanillaWeather(ctx.getSource().getPlayer());
+                            return 1;
+                        }))
+                .then(Commands.literal("credits")
+                        .executes(ctx -> {
+                            var credit = Component.literal("Macbrayne").withStyle(ChatFormatting.GOLD);
+                            var meteoCredit = Component.literal("Open-Meteo.com").withStyle(Style.EMPTY.withUnderlined(true).withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://open-meteo.com/")).applyFormat(ChatFormatting.AQUA));
+                            var maxmindCredit = Component.literal("https://www.maxmind.com").withStyle(Style.EMPTY.withUnderlined(true).withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.maxmind.com")).applyFormat(ChatFormatting.AQUA));
+                            ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.credits",
+                                    credit, meteoCredit, maxmindCredit), false);
                             return 1;
                         }))
         );

@@ -10,8 +10,6 @@ public class WeatherSync implements ModInitializer {
     @Override
     public void onInitialize() {
         LOGGER.info("WeatherSync is initializing");
-        // ServerPlayConnectionEvents.JOIN.register(Events::onPlayReady);
-        // ServerPlayerEvents.AFTER_RESPAWN.register(Events::onRespawn);
         CommandRegistrationCallback.EVENT.register(WeatherLocationCommand::register);
     }
 }

@@ -6,7 +6,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 
 public class Util {
-    public static void sendVanilla(ServerPlayer serverPlayer) {
+    public static void sendVanillaWeather(ServerPlayer serverPlayer) {
         Level serverLevel = serverPlayer.level();
         serverPlayer.connection.send(new ClientboundSetDefaultSpawnPositionPacket(serverLevel.getSharedSpawnPos(), serverLevel.getSharedSpawnAngle()));
         if (serverLevel.isRaining()) {

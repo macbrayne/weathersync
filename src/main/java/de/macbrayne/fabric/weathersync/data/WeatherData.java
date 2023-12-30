@@ -23,16 +23,19 @@ public record WeatherData(String latitude, String longitude, boolean isRaining, 
         return new WeatherData(latitude, longitude, this.isRaining, this.isThundering, this.rainLevel, this.thunderLevel);
     }
 
-    public static WeatherData fromCode(String latitude, String longitude, int weatherCode) {
+    public static WeatherData fromLocation(String latitude, String longitude) {
+        return new WeatherData(latitude, longitude, false, false, 0.0F, 0.0F);
+    }
+
+    public WeatherData withCode(int weatherCode) {
         WeatherCode code = WeatherCode.fromCode(weatherCode);
         float rainLevel = code.rainLevel();
         float thunderLevel = code.thunderLevel();
-        System.out.println("weatherCode " + weatherCode + " code " + code);
-        return new WeatherData(latitude, longitude, rainLevel > 0, thunderLevel > 0, rainLevel, thunderLevel);
+        return new WeatherData(this.latitude, this.longitude, rainLevel > 0, thunderLevel > 0, rainLevel, thunderLevel);
     }
 
     public void send(ServerPlayer player) {
-        LOGGER.error("Sending weather data to player " + player.getName().getString());
+        LOGGER.debug("Sending weather data to player " + player.getName().getString());
         ServerGamePacketListenerImpl connection = player.connection;
         if(isRaining()) {
             connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
@@ -43,7 +46,7 @@ public record WeatherData(String latitude, String longitude, boolean isRaining, 
         connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, rainLevel()));
 
 
-        player.sendSystemMessage(Component.literal("Your weather has been synced with the real world!"));
+        player.sendSystemMessage(Component.translatable("chat.weathersync.sync"));
         String suffix = isThundering() ? "thunder" : (isRaining() ? "rain" : "clear");
         player.sendSystemMessage(Component.translatable("chat.weathersync.status", Component.translatable("chat.weathersync.status." + suffix)));
     }

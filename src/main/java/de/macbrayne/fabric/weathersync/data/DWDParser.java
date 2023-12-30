@@ -6,12 +6,14 @@ import de.macbrayne.fabric.weathersync.components.LocationComponent;
 import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 public class DWDParser {
+    private static final GeoIpProvider GEO_IP_PROVIDER = new GeoIpProvider();
     private static final String API_BACKEND = System.getProperty("weathersync.api-backend", "https://api.open-meteo.com/v1/dwd-icon");
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("weathersync");
     private final String latitude;
@@ -19,11 +21,29 @@ public class DWDParser {
 
     public DWDParser(ServerPlayer player) {
         LocationComponent location = Components.LOCATION.get(player);
-        if(location.getWeatherData() == null) {
-            location.setWeatherData(WeatherData.fromCode("51.5344", "9.9349", 0));
-        }
+        doGeoLocationIfPossible(player, location);
         this.latitude = location.getWeatherData().latitude();
         this.longitude = location.getWeatherData().longitude();
+    }
+
+    public static void doGeoLocationIfPossible(ServerPlayer player, LocationComponent location) {
+        if(location.getWeatherData() == null) {
+            var defaultData = WeatherData.fromLocation("51.5344", "9.9349");
+            if(GEO_IP_PROVIDER.isAvailable()) {
+                var maybeIp = player.connection.getRemoteAddress();
+                if(maybeIp instanceof InetSocketAddress socket) {
+                    var geoLocation = GEO_IP_PROVIDER.tryGetLocation(socket.getAddress());
+                    if(geoLocation != null) {
+                        location.setWeatherData(geoLocation);
+                    } else {
+                        location.setWeatherData(defaultData);
+                    }
+                }
+
+            } else {
+                location.setWeatherData(defaultData);
+            }
+        }
     }
 
     public void request(ServerPlayer player) {
@@ -39,9 +59,9 @@ public class DWDParser {
         var root = JsonParser.parseString(json);
         var current = root.getAsJsonObject().get("current");
         var weatherCode = current.getAsJsonObject().get("weather_code").getAsInt();
-        WeatherData weatherData = WeatherData.fromCode("51.5344", "9.9349", weatherCode);
-        weatherData.send(player);
         LocationComponent location = Components.LOCATION.get(player);
+        WeatherData weatherData = location.getWeatherData().withCode(weatherCode);
+        weatherData.send(player);
         location.setWeatherData(weatherData);
     }
 }
