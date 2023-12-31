@@ -39,8 +39,8 @@ dependencies {
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    modImplementation "dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.4.0"
-    modImplementation "dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.4.0"
+    modImplementation include("dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.4.0")
+    modImplementation include("dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.4.0")
 
     modImplementation include("xyz.nucleoid:server-translations-api:2.2.0+1.20.3-rc1")
 
