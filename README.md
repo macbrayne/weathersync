@@ -5,7 +5,7 @@
 Syncs your weather with the real world!
 
 ## How it works
-It queries the OpenMeteo API to find out the weather at the provided location :)
+It first tries to figure out your location from the IP you first logged in with and then queries the OpenMeteo API to find out the weather at the provided location :)
 
 ## Configuration
 
@@ -15,8 +15,14 @@ This mod provides a bunch of in-game commands:
 - `/weathersync location set <latitude> <longitude>`: Sets the location the mod queries to the latitude and longitude you provide (default: Berlin)
 - `/weathersync sync`: Forces the game to send you your stored weather
 - `/weathersync timer reset` (OP level 2 required): Resets the 30-minute timer which aims to prevent excessive API requests
+- `/weathersync timer get` (OP level 2 required): Sends you the time left in minutes until the next global weather sync is allowed
 
-**Please open an issue if it doesn't properly sync and you don't get the weather described in the message to you**
+**Please open an issue if the weather doesn't properly sync and you don't get the weather described in the message to you**
+
+## Credits
+
+Weather data by [OpenMeteo](https://open-meteo.com/)
+GeoIP by [DB-IP](https://db-ip.com/)
 
 ## License
 

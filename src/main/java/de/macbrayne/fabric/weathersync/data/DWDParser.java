@@ -13,7 +13,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 public class DWDParser {
-    private static final GeoIpProvider GEO_IP_PROVIDER = new GeoIpProvider();
+    private static GeoIpProvider geoIpProvider = null;
     private static final String API_BACKEND = System.getProperty("weathersync.api-backend", "https://api.open-meteo.com/v1/dwd-icon");
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("weathersync");
     private final String latitude;
@@ -21,29 +21,29 @@ public class DWDParser {
 
     public DWDParser(ServerPlayer player) {
         LocationComponent location = Components.LOCATION.get(player);
-        doGeoLocationIfPossible(player, location);
+        location.setWeatherData(doGeoLocationIfPossible(player, location));
         this.latitude = location.getWeatherData().latitude();
         this.longitude = location.getWeatherData().longitude();
     }
 
-    public static void doGeoLocationIfPossible(ServerPlayer player, LocationComponent location) {
+    public WeatherData doGeoLocationIfPossible(ServerPlayer player, LocationComponent location) {
         if(location.getWeatherData() == null) {
             var defaultData = WeatherData.fromLocation("51.5344", "9.9349");
-            if(GEO_IP_PROVIDER.isAvailable()) {
+            if(geoIpProvider == null) {
+                geoIpProvider = new GeoIpProvider(player.server);
+            }
+            if(geoIpProvider.isAvailable()) {
                 var maybeIp = player.connection.getRemoteAddress();
                 if(maybeIp instanceof InetSocketAddress socket) {
-                    var geoLocation = GEO_IP_PROVIDER.tryGetLocation(socket.getAddress());
+                    var geoLocation = geoIpProvider.tryGetLocation(socket.getAddress());
                     if(geoLocation != null) {
-                        location.setWeatherData(geoLocation);
-                    } else {
-                        location.setWeatherData(defaultData);
+                        return geoLocation;
                     }
                 }
-
-            } else {
-                location.setWeatherData(defaultData);
             }
+            return defaultData;
         }
+        return location.getWeatherData();
     }
 
     public void request(ServerPlayer player) {

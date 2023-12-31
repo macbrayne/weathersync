@@ -59,7 +59,8 @@ public class WeatherLocationCommand {
                         .then(Commands.literal("get")
                                 .executes(ctx -> {
                                     SyncState state = SyncState.getServerState(ctx.getSource().getServer());
-                                    ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.timer.get",state.lastSync), false);
+                                    long timeLeft = (state.lastSync - System.currentTimeMillis() + 1_800_000) / 60 / 1000;
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.timer.get", state.lastSync == -1 ? state.lastSync : timeLeft), false);
                                     return 1;
                                 })))
                 .then(Commands.literal("enable")
@@ -95,9 +96,9 @@ public class WeatherLocationCommand {
                         .executes(ctx -> {
                             var credit = Component.literal("Macbrayne").withStyle(ChatFormatting.GOLD);
                             var meteoCredit = Component.literal("Open-Meteo.com").withStyle(Style.EMPTY.withUnderlined(true).withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://open-meteo.com/")).applyFormat(ChatFormatting.AQUA));
-                            var maxmindCredit = Component.literal("https://www.maxmind.com").withStyle(Style.EMPTY.withUnderlined(true).withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.maxmind.com")).applyFormat(ChatFormatting.AQUA));
+                            var dbCredit = Component.literal("DB-IP").withStyle(Style.EMPTY.withUnderlined(true).withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://db-ip.com")).applyFormat(ChatFormatting.AQUA));
                             ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.credits",
-                                    credit, meteoCredit, maxmindCredit), false);
+                                    credit, meteoCredit, dbCredit), false);
                             return 1;
                         }))
         );
