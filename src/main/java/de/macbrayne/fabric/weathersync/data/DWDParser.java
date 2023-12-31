@@ -3,6 +3,8 @@ package de.macbrayne.fabric.weathersync.data;
 import com.google.gson.JsonParser;
 import de.macbrayne.fabric.weathersync.components.Components;
 import de.macbrayne.fabric.weathersync.components.LocationComponent;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 
@@ -39,6 +41,7 @@ public class DWDParser {
                     if(geoLocation != null) {
                         return geoLocation;
                     }
+                    player.sendSystemMessage(Component.translatable("chat.weathersync.geoIpFailed", ChatFormatting.YELLOW));
                 }
             }
             return defaultData;
