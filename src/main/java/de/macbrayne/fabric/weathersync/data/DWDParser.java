@@ -13,6 +13,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 
 public class DWDParser {
     private static GeoIpProvider geoIpProvider = null;
@@ -58,13 +59,37 @@ public class DWDParser {
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(player, s));
     }
 
+    public static void requestCities(List<ServerPlayer> players) {
+        for (City city : City.values()) {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_BACKEND + "?latitude=" + city.latitude + "&longitude=" + city.longitude + "&current=weather_code&timezone=GMT"))
+                    .build();
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(city, s, players));
+        }
+    }
+
+    private static void parse(City city, String json, List<ServerPlayer> players) {
+        var root = JsonParser.parseString(json);
+        var current = root.getAsJsonObject().get("current");
+        var weatherCode = current.getAsJsonObject().get("weather_code").getAsInt();
+        WeatherData weatherData = WeatherData.fromLocation(city.latitude, city.longitude).withCode(weatherCode);
+        City.updateWeather(city, weatherData);
+        for(ServerPlayer player : players) {
+            LocationComponent location = Components.LOCATION.get(player);
+            if(location.getCity() == city) {
+                location.send(player);
+            }
+        }
+    }
+
     private static void parse(ServerPlayer player, String json) {
         var root = JsonParser.parseString(json);
         var current = root.getAsJsonObject().get("current");
         var weatherCode = current.getAsJsonObject().get("weather_code").getAsInt();
         LocationComponent location = Components.LOCATION.get(player);
         WeatherData weatherData = location.getWeatherData().withCode(weatherCode);
-        weatherData.send(player);
         location.setWeatherData(weatherData);
+        location.send(player);
     }
 }

@@ -18,7 +18,7 @@ public abstract class PlayerListMixin {
     boolean modifyLevelData(boolean original, @Local ServerPlayer serverPlayer) {
         LocationComponent location = Components.LOCATION.get(serverPlayer);
         if(location.isEnabled()) {
-            location.getWeatherData().send(serverPlayer);
+            location.send(serverPlayer);
             return false;
         }
         return original;

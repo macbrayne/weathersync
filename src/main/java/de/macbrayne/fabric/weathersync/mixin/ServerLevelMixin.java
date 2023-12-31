@@ -3,6 +3,7 @@ package de.macbrayne.fabric.weathersync.mixin;
 import de.macbrayne.fabric.weathersync.components.Components;
 import de.macbrayne.fabric.weathersync.components.LocationComponent;
 import de.macbrayne.fabric.weathersync.data.DWDParser;
+import de.macbrayne.fabric.weathersync.data.LocationType;
 import de.macbrayne.fabric.weathersync.state.SyncState;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
@@ -28,6 +29,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
 @Debug(export = true)
@@ -62,7 +65,7 @@ public abstract class ServerLevelMixin extends Level implements
                     player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel));
                 } else if (!doNewSync) {
                     LocationComponent locationComponent = Components.LOCATION.get(player);
-                    locationComponent.getWeatherData().send(player);
+                    locationComponent.send(player);
                 }
             }
             if (!doNewSync) {
@@ -72,14 +75,20 @@ public abstract class ServerLevelMixin extends Level implements
             LOGGER.debug("Syncing weather with real world");
             state.lastSync = System.currentTimeMillis();
             state.setDirty();
+            List<ServerPlayer> cityPlayers = new ArrayList<>(this.getServer().getPlayerList().getPlayers().size());
             for (ServerPlayer player : this.getServer().getPlayerList().getPlayers()) {
                 LocationComponent location = Components.LOCATION.get(player);
                 if (!location.isEnabled()) {
                     continue;
                 }
-                DWDParser parser = new DWDParser(player);
-                parser.request(player);
+                if(location.getLocationType() == LocationType.CITY) {
+                    cityPlayers.add(player);
+                } else {
+                    DWDParser parser = new DWDParser(player);
+                    parser.request(player);
+                }
             }
+            DWDParser.requestCities(cityPlayers);
         }
     }
 }

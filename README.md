@@ -17,6 +17,8 @@ This mod provides a bunch of in-game commands:
 - `/weathersync timer reset` (OP level 2 required): Resets the 30-minute timer which aims to prevent excessive API requests
 - `/weathersync timer get` (OP level 2 required): Sends you the time left in minutes until the next global weather sync is allowed
 
+You can change the API base URL using the `weathersync.api-backend` Java system property. The default value is `https://api.open-meteo.com/v1/dwd-icon`.
+
 **Please open an issue if the weather doesn't properly sync and you don't get the weather described in the message to you**
 
 ## Credits

@@ -4,7 +4,9 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import de.macbrayne.fabric.weathersync.Util;
 import de.macbrayne.fabric.weathersync.components.Components;
+import de.macbrayne.fabric.weathersync.data.City;
 import de.macbrayne.fabric.weathersync.data.DWDParser;
+import de.macbrayne.fabric.weathersync.data.LocationType;
 import de.macbrayne.fabric.weathersync.state.SyncState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
@@ -19,30 +21,60 @@ public class WeatherLocationCommand {
         commandSourceStackCommandDispatcher.register(Commands.literal("weathersync")
                 .then(Commands.literal("location")
                         .then(Commands.literal("set")
-                                .then(Commands.argument("latitude", DoubleArgumentType.doubleArg())
-                                        .then(Commands.argument("longitude", DoubleArgumentType.doubleArg())
+                                .then(Commands.literal("auto")
+                                        .executes(context -> {
+                                            var locationComponent = Components.LOCATION.get(context.getSource().getPlayer());
+                                            locationComponent.setWeatherData(null);
+                                            DWDParser dwdParser = new DWDParser(context.getSource().getPlayer());
+                                            dwdParser.request(context.getSource().getPlayer());
+                                            locationComponent.setLocationType(LocationType.CUSTOM);
+                                            context.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.location.set.auto"), false);
+                                            return 1;
+                                        }))
+                                .then(Commands.literal("city")
+                                        .then(Commands.argument("name", CityArgumentType.city())
                                                 .executes(ctx -> {
-                                                    Double latitude = ctx.getArgument("latitude", Double.class);
-                                                    Double longitude = ctx.getArgument("longitude", Double.class);
+                                                    City city = CityArgumentType.getCity(ctx, "name");
+                                                    var cityComponent = Component.translatable("commands.weathersync.weathersync.location.city." + city.key);
                                                     var locationComponent = Components.LOCATION.get(ctx.getSource().getPlayer());
-                                                    locationComponent.setWeatherData(locationComponent.getWeatherData().withLocation(latitude.toString(), longitude.toString()));
-                                                    ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.location.set", latitude, longitude), false);
+                                                    locationComponent.setLocationType(LocationType.CITY);
+                                                    locationComponent.setCity(city);
+                                                    locationComponent.send(ctx.getSource().getPlayer());
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.location.set.city", city.latitude, city.longitude, cityComponent), false);
                                                     return 1;
-                                                })
-                                        )
-                                ))
+                                                })))
+                                .then(Commands.literal("custom")
+                                        .then(Commands.argument("latitude", DoubleArgumentType.doubleArg())
+                                                .then(Commands.argument("longitude", DoubleArgumentType.doubleArg())
+                                                        .executes(ctx -> {
+                                                            Double latitude = ctx.getArgument("latitude", Double.class);
+                                                            Double longitude = ctx.getArgument("longitude", Double.class);
+                                                            var locationComponent = Components.LOCATION.get(ctx.getSource().getPlayer());
+                                                            locationComponent.setWeatherData(locationComponent.getWeatherData().withLocation(latitude.toString(), longitude.toString()));
+                                                            ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.location.set", latitude, longitude), false);
+                                                            return 1;
+                                                        })))))
                         .then(Commands.literal("get")
                                 .executes(ctx -> {
-                                    String latitude = Components.LOCATION.get(ctx.getSource().getPlayer()).getWeatherData().latitude();
-                                    String longitude = Components.LOCATION.get(ctx.getSource().getPlayer()).getWeatherData().longitude();
-                                    ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.location.get", latitude, longitude), false);
+                                    var location = Components.LOCATION.get(ctx.getSource().getPlayer());
+                                    switch (location.getLocationType()) {
+                                        case CITY -> {
+                                            var city = Component.translatable("commands.weathersync.weathersync.location.city." + location.getCity().key);
+                                            ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.location.get.city", location.getCity().latitude, location.getCity().longitude, city), false);
+                                        }
+                                        case CUSTOM -> {
+                                            String latitude = location.getWeatherData().latitude();
+                                            String longitude = location.getWeatherData().longitude();
+                                            ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.location.get.custom", latitude, longitude), false);
+                                        }
+                                    }
                                     return 1;
                                 })))
                 .then(Commands.literal("sync")
                         .executes(ctx -> {
                             var locationComponent = Components.LOCATION.get(ctx.getSource().getPlayer());
                             if(locationComponent.isEnabled()) {
-                                locationComponent.getWeatherData().send(ctx.getSource().getPlayer());
+                                locationComponent.send(ctx.getSource().getPlayer());
                             }
                             return 1;
                         }))
@@ -72,12 +104,7 @@ public class WeatherLocationCommand {
                             }
                             locationComponent.setEnabled(true);
                             ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.enable"), false);
-                            if(locationComponent.getWeatherData() == null) {
-                                DWDParser parser = new DWDParser(ctx.getSource().getPlayer());
-                                parser.request(ctx.getSource().getPlayer());
-                            } else {
-                                locationComponent.getWeatherData().send(ctx.getSource().getPlayer());
-                            }
+                            locationComponent.send(ctx.getSource().getPlayer());
                             return 1;
                         }))
                 .then(Commands.literal("disable")
