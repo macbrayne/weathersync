@@ -7,6 +7,7 @@ import de.macbrayne.fabric.weathersync.components.Components;
 import de.macbrayne.fabric.weathersync.data.City;
 import de.macbrayne.fabric.weathersync.data.DWDParser;
 import de.macbrayne.fabric.weathersync.data.LocationType;
+import de.macbrayne.fabric.weathersync.data.WeatherData;
 import de.macbrayne.fabric.weathersync.state.SyncState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
@@ -39,8 +40,8 @@ public class WeatherLocationCommand {
                                                     var locationComponent = Components.LOCATION.get(ctx.getSource().getPlayer());
                                                     locationComponent.setLocationType(LocationType.CITY);
                                                     locationComponent.setCity(city);
-                                                    locationComponent.send(ctx.getSource().getPlayer());
                                                     ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.location.set.city", city.latitude, city.longitude, cityComponent), false);
+                                                    locationComponent.send(ctx.getSource().getPlayer());
                                                     return 1;
                                                 })))
                                 .then(Commands.literal("custom")
@@ -50,7 +51,7 @@ public class WeatherLocationCommand {
                                                             Double latitude = ctx.getArgument("latitude", Double.class);
                                                             Double longitude = ctx.getArgument("longitude", Double.class);
                                                             var locationComponent = Components.LOCATION.get(ctx.getSource().getPlayer());
-                                                            locationComponent.setWeatherData(locationComponent.getWeatherData().withLocation(latitude.toString(), longitude.toString()));
+                                                            locationComponent.setWeatherData(WeatherData.fromLocation(latitude.toString(), longitude.toString()));
                                                             ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.location.set", latitude, longitude), false);
                                                             return 1;
                                                         })))))

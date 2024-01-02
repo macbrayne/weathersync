@@ -2,11 +2,12 @@
   "schemaVersion": 1,
   "id": "weathersync",
   "version": "${version}",
-  "name": "weathersync",
-  "description": "",
+  "name": "WeatherSync",
+  "description": "Syncs your server's players' weather with the real world!",
   "authors": ["macbrayne"],
   "contact": {
-    "repo": "https://github.com/macbrayne/weathersync"
+    "sources": "https://github.com/macbrayne/weathersync",
+    "issues": "https://github.com/macbrayne/weathersync/issues"
   },
   "license": "EUPL-1.2",
   "icon": "assets/weathersync/icon.png",
