@@ -51,6 +51,7 @@ public class WeatherLocationCommand {
                                                             Double latitude = ctx.getArgument("latitude", Double.class);
                                                             Double longitude = ctx.getArgument("longitude", Double.class);
                                                             var locationComponent = Components.LOCATION.get(ctx.getSource().getPlayer());
+                                                            locationComponent.setLocationType(LocationType.CUSTOM);
                                                             locationComponent.setWeatherData(WeatherData.fromLocation(latitude.toString(), longitude.toString()));
                                                             ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.location.set", latitude, longitude), false);
                                                             return 1;
