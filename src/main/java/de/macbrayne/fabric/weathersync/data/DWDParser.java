@@ -3,8 +3,10 @@ package de.macbrayne.fabric.weathersync.data;
 import com.google.gson.JsonParser;
 import de.macbrayne.fabric.weathersync.components.Components;
 import de.macbrayne.fabric.weathersync.components.LocationComponent;
+import de.macbrayne.fabric.weathersync.state.SyncState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 
@@ -19,47 +21,44 @@ public class DWDParser {
     private static GeoIpProvider geoIpProvider = null;
     private static final String API_BACKEND = System.getProperty("weathersync.api-backend", "https://api.open-meteo.com/v1/dwd-icon");
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("weathersync");
-    private final String latitude;
-    private final String longitude;
 
-    public DWDParser(ServerPlayer player) {
-        LocationComponent location = Components.LOCATION.get(player);
-        location.setWeatherData(doGeoLocationIfPossible(player, location));
-        this.latitude = location.getWeatherData().latitude();
-        this.longitude = location.getWeatherData().longitude();
+    public DWDParser() {
     }
 
     public WeatherData doGeoLocationIfPossible(ServerPlayer player, LocationComponent location) {
-        if(location.getWeatherData() == null) {
-            var defaultData = WeatherData.fromLocation("51.5344", "9.9349");
-            if(geoIpProvider == null) {
-                geoIpProvider = new GeoIpProvider(player.server);
-            }
-            if(geoIpProvider.isAvailable()) {
-                var maybeIp = player.connection.getRemoteAddress();
-                if(maybeIp instanceof InetSocketAddress socket) {
-                    var geoLocation = geoIpProvider.tryGetLocation(socket.getAddress());
-                    if(geoLocation != null) {
-                        return geoLocation;
-                    }
-                    player.sendSystemMessage(Component.translatable("chat.weathersync.geoIpFailed", ChatFormatting.YELLOW));
-                }
-            }
-            return defaultData;
+        if(geoIpProvider == null) {
+            geoIpProvider = new GeoIpProvider(player.server);
         }
-        return location.getWeatherData();
+        if(geoIpProvider.isAvailable()) {
+            var maybeIp = player.connection.getRemoteAddress();
+            if(maybeIp instanceof InetSocketAddress socket) {
+                var geoLocation = geoIpProvider.tryGetLocation(socket.getAddress());
+                if(geoLocation != null) {
+                    return geoLocation;
+                }
+                player.sendSystemMessage(Component.translatable("chat.weathersync.geoIpFailed", ChatFormatting.YELLOW));
+            }
+        }
+        return null;
     }
 
-    public void request(ServerPlayer player) {
+    public void request(ServerPlayer player, String latitude, String longitude) {
         LOGGER.debug("Uh oh, " + player.getName().getString() + " wants to know the weather!");
+        SyncState state = SyncState.getServerState(player.getServer());
+        if(state.apiRequests.get() > 8_000) {
+            LOGGER.error("Daily API quota at 90%, stop syncing player weather");
+            return;
+        }
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_BACKEND + "?latitude=" + latitude + "&longitude=" + longitude + "&current=weather_code&timezone=GMT"))
                 .build();
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(player, s));
+        state.apiRequests.getAndIncrement();
+        state.setDirty();
     }
 
-    public static void requestCities(List<ServerPlayer> players) {
+    public static void requestCities(MinecraftServer server, List<ServerPlayer> players) {
         for (City city : City.values()) {
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
@@ -67,6 +66,9 @@ public class DWDParser {
                     .build();
             client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(city, s, players));
         }
+        SyncState state = SyncState.getServerState(server);
+        state.apiRequests.getAndAdd(City.values().length);
+        state.setDirty();
     }
 
     private static void parse(City city, String json, List<ServerPlayer> players) {

@@ -4,6 +4,7 @@ import de.macbrayne.fabric.weathersync.components.Components;
 import de.macbrayne.fabric.weathersync.components.LocationComponent;
 import de.macbrayne.fabric.weathersync.data.DWDParser;
 import de.macbrayne.fabric.weathersync.data.LocationType;
+import de.macbrayne.fabric.weathersync.data.WeatherData;
 import de.macbrayne.fabric.weathersync.state.SyncState;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
@@ -84,11 +85,12 @@ public abstract class ServerLevelMixin extends Level implements
                 if(location.getLocationType() == LocationType.CITY) {
                     cityPlayers.add(player);
                 } else {
-                    DWDParser parser = new DWDParser(player);
-                    parser.request(player);
+                    WeatherData data = location.getWeatherData();
+                    DWDParser parser = new DWDParser();
+                    parser.request(player, data.latitude(), data.longitude());
                 }
             }
-            DWDParser.requestCities(cityPlayers);
+            DWDParser.requestCities(getServer(), cityPlayers);
         }
     }
 }

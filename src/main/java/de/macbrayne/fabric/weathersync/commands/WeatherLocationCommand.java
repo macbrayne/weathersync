@@ -17,7 +17,13 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Locale;
+
 public class WeatherLocationCommand {
+    private static final int MAX_SYNC_FREQUENCY = Integer.parseInt(System.getProperty("weathersync.max-sync-frequency", "30"));
+
     public static void register(CommandDispatcher<CommandSourceStack> commandSourceStackCommandDispatcher, CommandBuildContext commandBuildContext, Commands.CommandSelection commandSelection) {
         commandSourceStackCommandDispatcher.register(Commands.literal("weathersync")
                 .then(Commands.literal("location")
@@ -26,9 +32,15 @@ public class WeatherLocationCommand {
                                         .executes(context -> {
                                             var locationComponent = Components.LOCATION.get(context.getSource().getPlayer());
                                             locationComponent.setWeatherData(null);
-                                            DWDParser dwdParser = new DWDParser(context.getSource().getPlayer());
-                                            dwdParser.request(context.getSource().getPlayer());
+                                            DWDParser dwdParser = new DWDParser();
+                                            WeatherData maybeData = dwdParser.doGeoLocationIfPossible(context.getSource().getPlayer(), locationComponent);
+                                            if(maybeData == null) {
+                                                context.getSource().sendFailure(Component.translatable("chat.weathersync.geoIpFailed"));
+                                                return 0;
+                                            }
+                                            locationComponent.setWeatherData(maybeData);
                                             locationComponent.setLocationType(LocationType.CUSTOM);
+                                            dwdParser.request(context.getSource().getPlayer(), maybeData.latitude(), maybeData.longitude());
                                             context.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.location.set.auto"), false);
                                             return 1;
                                         }))
@@ -48,12 +60,14 @@ public class WeatherLocationCommand {
                                         .then(Commands.argument("latitude", DoubleArgumentType.doubleArg())
                                                 .then(Commands.argument("longitude", DoubleArgumentType.doubleArg())
                                                         .executes(ctx -> {
-                                                            Double latitude = ctx.getArgument("latitude", Double.class);
-                                                            Double longitude = ctx.getArgument("longitude", Double.class);
+                                                            String latitude = ctx.getArgument("latitude", Double.class).toString();
+                                                            String longitude = ctx.getArgument("longitude", Double.class).toString();
                                                             var locationComponent = Components.LOCATION.get(ctx.getSource().getPlayer());
                                                             locationComponent.setLocationType(LocationType.CUSTOM);
-                                                            locationComponent.setWeatherData(WeatherData.fromLocation(latitude.toString(), longitude.toString()));
+                                                            locationComponent.setWeatherData(WeatherData.fromLocation(latitude, longitude));
                                                             ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.location.set", latitude, longitude), false);
+                                                            DWDParser dwdParser = new DWDParser();
+                                                            dwdParser.request(ctx.getSource().getPlayer(), latitude, longitude);
                                                             return 1;
                                                         })))))
                         .then(Commands.literal("get")
@@ -81,8 +95,8 @@ public class WeatherLocationCommand {
                             return 1;
                         }))
                 .then(Commands.literal("timer")
-                        .requires(source -> source.hasPermission(2))
                         .then(Commands.literal("reset")
+                                .requires(source -> source.hasPermission(2))
                                 .executes(ctx -> {
                                     SyncState state = SyncState.getServerState(ctx.getSource().getServer());
                                     state.lastSync = -1;
@@ -93,7 +107,7 @@ public class WeatherLocationCommand {
                         .then(Commands.literal("get")
                                 .executes(ctx -> {
                                     SyncState state = SyncState.getServerState(ctx.getSource().getServer());
-                                    long timeLeft = (state.lastSync - System.currentTimeMillis() + 1_800_000) / 60 / 1000;
+                                    long timeLeft = ((state.lastSync - System.currentTimeMillis()) / 60 / 1000 + MAX_SYNC_FREQUENCY);
                                     ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.timer.get", state.lastSync == -1 ? state.lastSync : timeLeft), false);
                                     return 1;
                                 })))
@@ -121,6 +135,16 @@ public class WeatherLocationCommand {
                             Util.sendVanillaWeather(ctx.getSource().getPlayer());
                             return 1;
                         }))
+                .then(Commands.literal("quota")
+                        .requires(source -> source.hasPermission(1))
+                        .then(Commands.literal("get")
+                                .requires(source -> source.hasPermission(1))
+                                .executes(ctx -> {
+                                    SyncState state = SyncState.getServerState(ctx.getSource().getServer());
+                                    String date = state.nextReset.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(Locale.ENGLISH));
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.quota.get", state.apiRequests.get(), date), false);
+                                    return 1;
+                                })))
                 .then(Commands.literal("credits")
                         .executes(ctx -> {
                             var credit = Component.literal("Macbrayne").withStyle(ChatFormatting.GOLD);
