@@ -26,8 +26,9 @@ public class DWDParser {
     }
 
     public WeatherData doGeoLocationIfPossible(ServerPlayer player, LocationComponent location) {
+        LOGGER.debug("Attempting GeoIP for " + player.getName().getString());
         if(geoIpProvider == null) {
-            geoIpProvider = new GeoIpProvider(player.server);
+            geoIpProvider = new GeoIpProvider();
         }
         if(geoIpProvider.isAvailable()) {
             var maybeIp = player.connection.getRemoteAddress();

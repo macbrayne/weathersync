@@ -5,7 +5,6 @@ import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
 import com.maxmind.geoip2.record.Location;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -18,28 +17,29 @@ public class GeoIpProvider {
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("weathersync");
     private final DatabaseReader reader;
 
-    public GeoIpProvider(MinecraftServer server) {
+    public GeoIpProvider() {
         DatabaseReader reader = null;
+        LOGGER.info("Trying to load GeoIP database");
         try {
             var loader = FabricLoader.getInstance();
             var path = loader.getModContainer("weathersync").get().findPath("assets/weathersync/dbip-city-lite-2023-12.mmdb").get();
+            LOGGER.debug("Found file");
             InputStream database = Files.newInputStream(path);
+            LOGGER.debug("Created InputStream");
             reader = new DatabaseReader.Builder(database).build();
             LOGGER.info("Loaded GeoIP database");
         } catch (IOException e) {
             LOGGER.error("Could not load GeoIP database", e);
-        } finally {
-            this.reader = reader;
         }
+        this.reader = reader;
     }
 
     public WeatherData tryGetLocation(InetAddress address) {
         Optional<CityResponse> city;
-        System.out.println(address);
         try {
             city = reader.tryCity(address);
         } catch (IOException | GeoIp2Exception e) {
-            LOGGER.error("Could not get location for " + address, e);
+            LOGGER.error("Could not get location for " + address.getHostAddress(), e);
             city = Optional.empty();
         }
         if(city.isPresent()) {
