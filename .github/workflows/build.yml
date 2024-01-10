@@ -35,9 +35,6 @@ permissions:
 jobs:
   build:
     name: Build
-    strategy:
-      matrix:
-        gradle-version: [wrapper, release-candidate]
 
     runs-on: ubuntu-latest
 
@@ -57,7 +54,7 @@ jobs:
       - name: 🤗 Setup Gradle and build artifacts
         uses: gradle/gradle-build-action@bd5760595778326ba7f1441bcf7e88b49de61a25 # 2.6.0
         with:
-          gradle-version: ${{ matrix.gradle-version }}
+          gradle-version: wrapper
           arguments: build
 
       - name: 📦 Upload artifacts
