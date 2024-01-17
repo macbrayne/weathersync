@@ -1,6 +1,8 @@
 package de.macbrayne.fabric.weathersync.data;
 
 import com.google.gson.JsonParser;
+import de.macbrayne.fabric.weathersync.api.PriorityUrl;
+import de.macbrayne.fabric.weathersync.api.WeatherApi;
 import de.macbrayne.fabric.weathersync.components.Components;
 import de.macbrayne.fabric.weathersync.components.LocationComponent;
 import de.macbrayne.fabric.weathersync.state.SyncState;
@@ -19,7 +21,6 @@ import java.util.List;
 
 public class DWDParser {
     private static GeoIpProvider geoIpProvider = null;
-    private static final String API_BACKEND = System.getProperty("weathersync.api-backend", "https://api.open-meteo.com/v1/dwd-icon");
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("weathersync");
 
     public DWDParser() {
@@ -50,9 +51,13 @@ public class DWDParser {
             LOGGER.error("Daily API quota at 90%, stop syncing player weather");
             return;
         }
+        PriorityUrl backend = WeatherApi.getInstance().getCurrentBackend();
+        if(backend == null) {
+            return;
+        }
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(API_BACKEND + "?latitude=" + latitude + "&longitude=" + longitude + "&current=weather_code&timezone=GMT"))
+                .uri(URI.create(backend.url() + "?latitude=" + latitude + "&longitude=" + longitude + "&current=weather_code&timezone=GMT"))
                 .build();
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(player, s));
         state.apiRequests.getAndIncrement();
@@ -60,10 +65,14 @@ public class DWDParser {
     }
 
     public static void requestCities(MinecraftServer server, List<ServerPlayer> players) {
+        PriorityUrl backend = WeatherApi.getInstance().getCurrentBackend();
+        if(backend == null) {
+            return;
+        }
         for (City city : City.values()) {
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(API_BACKEND + "?latitude=" + city.latitude + "&longitude=" + city.longitude + "&current=weather_code&timezone=GMT"))
+                    .uri(URI.create(backend.url() + "?latitude=" + city.latitude + "&longitude=" + city.longitude + "&current=weather_code&timezone=GMT"))
                     .build();
             client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(city, s, players));
         }

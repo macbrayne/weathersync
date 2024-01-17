@@ -1,5 +1,7 @@
 package de.macbrayne.fabric.weathersync;
 
+import de.macbrayne.fabric.weathersync.api.PriorityUrl;
+import de.macbrayne.fabric.weathersync.api.WeatherApi;
 import de.macbrayne.fabric.weathersync.commands.CityArgumentType;
 import de.macbrayne.fabric.weathersync.commands.WeatherLocationCommand;
 import de.macbrayne.fabric.weathersync.data.GeoIpProvider;
@@ -24,6 +26,12 @@ public class WeatherSync implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(ServerStarted::fetchCityWeather);
         CommandRegistrationCallback.EVENT.register(WeatherLocationCommand::register);
 
+        LOGGER.info("Registering weather backends");
+        WeatherApi api = WeatherApi.getInstance();
+        api.registerWeatherVariable("weather_code");
+        api.registerBackend(PriorityUrl.of("https://api.open-meteo.com/v1/dwd-icon", 0));
+        api.registerBackend(PriorityUrl.of(System.getProperty("weathersync.api-backend", "https://api.macbrayne.de/v1/dwd-icon"), 100));
+
         try {
             runSelfTest();
         } catch (Exception e) {
@@ -38,7 +46,7 @@ public class WeatherSync implements ModInitializer {
         InetAddress address = InetAddress.getByName("8.8.8.8");
         LOGGER.debug("Trying 8.8.8.8");
         WeatherData data = provider.tryGetLocation(address);
-        if(data != null) {
+        if (data != null) {
             LOGGER.info("Found location: " + data.latitude() + " " + data.longitude());
         } else {
             LOGGER.info("Couldn't find location, weird");
