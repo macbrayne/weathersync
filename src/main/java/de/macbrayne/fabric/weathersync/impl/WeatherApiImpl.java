@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WeatherApiImpl implements WeatherApi {
-    public static final WeatherApi INSTANCE = new WeatherApiImpl();
+    public static final WeatherApiImpl INSTANCE = new WeatherApiImpl();
     private final List<String> weatherVariables = new ArrayList<>();
     private final List<PriorityUrl> backends = new ArrayList<>();
     private PriorityUrl currentBackend;
@@ -37,5 +37,9 @@ public class WeatherApiImpl implements WeatherApi {
     @Override
     public List<String> getWeatherVariables() {
         return weatherVariables;
+    }
+
+    public String getWeatherVariableQueryString() {
+        return String.join(",", weatherVariables);
     }
 }

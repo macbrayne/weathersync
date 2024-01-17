@@ -1,10 +1,12 @@
 package de.macbrayne.fabric.weathersync.data;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.macbrayne.fabric.weathersync.api.PriorityUrl;
 import de.macbrayne.fabric.weathersync.api.WeatherApi;
 import de.macbrayne.fabric.weathersync.components.Components;
 import de.macbrayne.fabric.weathersync.components.LocationComponent;
+import de.macbrayne.fabric.weathersync.impl.WeatherApiImpl;
 import de.macbrayne.fabric.weathersync.state.SyncState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -18,6 +20,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class DWDParser {
     private static GeoIpProvider geoIpProvider = null;
@@ -51,55 +54,46 @@ public class DWDParser {
             LOGGER.error("Daily API quota at 90%, stop syncing player weather");
             return;
         }
-        PriorityUrl backend = WeatherApi.getInstance().getCurrentBackend();
-        if(backend == null) {
-            return;
-        }
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(backend.url() + "?latitude=" + latitude + "&longitude=" + longitude + "&current=weather_code&timezone=GMT"))
-                .build();
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(player, s));
-        state.apiRequests.getAndIncrement();
-        state.setDirty();
+        LocationComponent location = Components.LOCATION.get(player);
+        commonRequest(player.getServer(), latitude, longitude, location.getWeatherData(), weatherData -> {
+            location.setWeatherData(weatherData);
+            location.send(player);
+        });
     }
 
-    public static void requestCity(City city, MinecraftServer server, List<ServerPlayer> players) {
+    public static void requestCity(City city, MinecraftServer server) {
+        List<ServerPlayer> players = server.getPlayerList().getPlayers();
+        commonRequest(server, city.latitude, city.longitude, City.getWeather(city), weatherData -> {
+            City.updateWeather(city, weatherData);
+            for(ServerPlayer player : players) {
+                LocationComponent location = Components.LOCATION.get(player);
+                if(location.getCity() == city) {
+                    location.send(player);
+                }
+            }
+        });
+    }
+
+    private static void commonRequest(MinecraftServer server, String latitude, String longitude, WeatherData original, Consumer<WeatherData> callback) {
         PriorityUrl backend = WeatherApi.getInstance().getCurrentBackend();
         if(backend == null) {
             return;
         }
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(backend.url() + "?latitude=" + city.latitude + "&longitude=" + city.longitude + "&current=weather_code&timezone=GMT"))
+                .uri(URI.create(backend.url() + "?latitude=" + latitude + "&longitude=" + longitude + "&current=" + WeatherApiImpl.INSTANCE.getWeatherVariableQueryString() + "&timezone=GMT"))
                 .build();
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(city, s, players));
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(original, s, callback));
         SyncState state = SyncState.getServerState(server);
         state.apiRequests.getAndIncrement();
         state.setDirty();
     }
 
-    private static void parse(City city, String json, List<ServerPlayer> players) {
-        var root = JsonParser.parseString(json);
-        var current = root.getAsJsonObject().get("current");
-        var weatherCode = current.getAsJsonObject().get("weather_code").getAsInt();
-        WeatherData weatherData = WeatherData.fromLocation(city.latitude, city.longitude).withCode(weatherCode);
-        City.updateWeather(city, weatherData);
-        for(ServerPlayer player : players) {
-            LocationComponent location = Components.LOCATION.get(player);
-            if(location.getCity() == city) {
-                location.send(player);
-            }
-        }
-    }
-
-    private static void parse(ServerPlayer player, String json) {
-        var root = JsonParser.parseString(json);
-        var current = root.getAsJsonObject().get("current");
-        var weatherCode = current.getAsJsonObject().get("weather_code").getAsInt();
-        LocationComponent location = Components.LOCATION.get(player);
-        WeatherData weatherData = location.getWeatherData().withCode(weatherCode);
-        location.setWeatherData(weatherData);
-        location.send(player);
+    private static void parse(WeatherData original, String json, Consumer<WeatherData> callback) {
+        JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+        JsonObject current = root.getAsJsonObject("current");
+        int weatherCode = current.get("weather_code").getAsInt();
+        WeatherData weatherData = original.withCode(weatherCode);
+        callback.accept(weatherData);
     }
 }

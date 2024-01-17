@@ -77,22 +77,19 @@ public abstract class ServerLevelMixin extends Level implements
             LOGGER.debug("Syncing weather with real world");
             state.lastSync = System.currentTimeMillis();
             state.setDirty();
-            List<ServerPlayer> cityPlayers = new ArrayList<>(this.getServer().getPlayerList().getPlayers().size());
             for (ServerPlayer player : this.getServer().getPlayerList().getPlayers()) {
                 LocationComponent location = Components.LOCATION.get(player);
                 if (!location.isEnabled()) {
                     continue;
                 }
-                if(location.getLocationType() == LocationType.CITY) {
-                    cityPlayers.add(player);
-                } else {
+                if (location.getLocationType() != LocationType.CITY) {
                     WeatherData data = location.getWeatherData();
                     DWDParser parser = new DWDParser();
                     parser.request(player, data.latitude(), data.longitude());
                 }
             }
             for (City city : City.values()) {
-                DWDParser.requestCity(city, getServer(), cityPlayers);
+                DWDParser.requestCity(city, getServer());
             }
         }
     }
