@@ -2,6 +2,7 @@ package de.macbrayne.fabric.weathersync.mixin;
 
 import de.macbrayne.fabric.weathersync.components.Components;
 import de.macbrayne.fabric.weathersync.components.LocationComponent;
+import de.macbrayne.fabric.weathersync.data.City;
 import de.macbrayne.fabric.weathersync.data.DWDParser;
 import de.macbrayne.fabric.weathersync.data.LocationType;
 import de.macbrayne.fabric.weathersync.data.WeatherData;
@@ -90,7 +91,9 @@ public abstract class ServerLevelMixin extends Level implements
                     parser.request(player, data.latitude(), data.longitude());
                 }
             }
-            DWDParser.requestCities(getServer(), cityPlayers);
+            for (City city : City.values()) {
+                DWDParser.requestCity(city, getServer(), cityPlayers);
+            }
         }
     }
 }

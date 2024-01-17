@@ -64,20 +64,18 @@ public class DWDParser {
         state.setDirty();
     }
 
-    public static void requestCities(MinecraftServer server, List<ServerPlayer> players) {
+    public static void requestCity(City city, MinecraftServer server, List<ServerPlayer> players) {
         PriorityUrl backend = WeatherApi.getInstance().getCurrentBackend();
         if(backend == null) {
             return;
         }
-        for (City city : City.values()) {
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(backend.url() + "?latitude=" + city.latitude + "&longitude=" + city.longitude + "&current=weather_code&timezone=GMT"))
-                    .build();
-            client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(city, s, players));
-        }
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(backend.url() + "?latitude=" + city.latitude + "&longitude=" + city.longitude + "&current=weather_code&timezone=GMT"))
+                .build();
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(city, s, players));
         SyncState state = SyncState.getServerState(server);
-        state.apiRequests.getAndAdd(City.values().length);
+        state.apiRequests.getAndIncrement();
         state.setDirty();
     }
 
