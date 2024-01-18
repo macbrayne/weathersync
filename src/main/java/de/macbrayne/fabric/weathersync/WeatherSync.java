@@ -47,7 +47,7 @@ public class WeatherSync implements ModInitializer {
         LOGGER.debug("Trying 8.8.8.8");
         WeatherData data = provider.tryGetLocation(address);
         if (data != null) {
-            LOGGER.info("Found location: " + data.latitude() + " " + data.longitude());
+            LOGGER.info("Found location: " + data.latitude() + " " + data.longitude() + " for ip 8.8.8.8");
         } else {
             LOGGER.info("Couldn't find location, weird");
         }

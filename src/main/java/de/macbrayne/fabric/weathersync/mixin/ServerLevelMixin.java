@@ -52,9 +52,6 @@ public abstract class ServerLevelMixin extends Level implements
     private void doGeoWeather(CallbackInfo ci, boolean wasRaining) {
         ci.cancel();
         if(wasRaining != this.isRaining()) {
-
-            SyncState state = SyncState.getServerState(this.getServer());
-            boolean doNewSync = state.lastSync + 1.8e6 > System.currentTimeMillis() || state.lastSync == -1;
             for (ServerPlayer player : this.getServer().getPlayerList().getPlayers()) {
                 LocationComponent location = Components.LOCATION.get(player);
                 if (!location.isEnabled()) {
@@ -65,31 +62,10 @@ public abstract class ServerLevelMixin extends Level implements
                     }
                     player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, this.rainLevel));
                     player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel));
-                } else if (!doNewSync) {
+                } else {
                     LocationComponent locationComponent = Components.LOCATION.get(player);
                     locationComponent.send(player);
                 }
-            }
-            if (!doNewSync) {
-                LOGGER.debug("Not syncing weather with real world");
-                return;
-            }
-            LOGGER.debug("Syncing weather with real world");
-            state.lastSync = System.currentTimeMillis();
-            state.setDirty();
-            for (ServerPlayer player : this.getServer().getPlayerList().getPlayers()) {
-                LocationComponent location = Components.LOCATION.get(player);
-                if (!location.isEnabled()) {
-                    continue;
-                }
-                if (location.getLocationType() != LocationType.CITY) {
-                    WeatherData data = location.getWeatherData();
-                    DWDParser parser = new DWDParser();
-                    parser.request(player, data.latitude(), data.longitude());
-                }
-            }
-            for (City city : City.values()) {
-                DWDParser.requestCity(city, getServer());
             }
         }
     }

@@ -76,6 +76,9 @@ public class PlayerLocationComponent implements LocationComponent {
 
     @Override
     public void send(ServerPlayer player) {
+        if(!isEnabled()) {
+            return;
+        }
         switch (getLocationType()) {
             case CITY -> {
                 var city = City.getWeather(getCity());

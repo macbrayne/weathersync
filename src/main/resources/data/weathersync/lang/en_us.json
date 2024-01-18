@@ -13,7 +13,7 @@
   "commands.weathersync.weathersync.location.get.custom": "Your weather location is %s, %s",
   "commands.weathersync.weathersync.location.get.city": "Your weather location is %s, %s (city: %s)",
   "commands.weathersync.weathersync.timer.reset": "Reset timer",
-  "commands.weathersync.weathersync.timer.get": "Waiting %s minutes before syncing the server again on the next weather change",
+  "commands.weathersync.weathersync.timer.get": "Waiting %s minutes before syncing the server again",
   "commands.weathersync.weathersync.enable": "Enabled weather sync",
   "commands.weathersync.weathersync.enable.failed": "Weathersync is already enabled",
   "commands.weathersync.weathersync.disable": "Disabled weather sync",

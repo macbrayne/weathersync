@@ -12,32 +12,31 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SyncState extends SavedData {
     private static final SavedData.Factory<SyncState> TYPE = new SavedData.Factory<>(SyncState::new, SyncState::fromNbt, null);
-    public long lastSync = -1;
-    public AtomicInteger apiRequests = new AtomicInteger(0);
+    public static int ticksBetweenSyncs = Integer.parseInt(System.getProperty("weathersync.minutesBetweenSyncs", "30")) * 60 * 20;
+    public int apiRequests = 0;
     public LocalDate nextReset = LocalDate.now();
     @Override
     public CompoundTag save(CompoundTag compoundTag) {
-        compoundTag.putLong("lastSync", lastSync);
-        compoundTag.putInt("apiRequests", apiRequests.get());
+        compoundTag.putInt("apiRequests", apiRequests);
         compoundTag.putLong("nextReset", nextReset.toEpochDay());
         return compoundTag;
     }
 
     public static SyncState fromNbt(CompoundTag compoundTag) {
         SyncState syncState = new SyncState();
-        syncState.lastSync = compoundTag.getLong("lastSync");
-        int previousQuota = compoundTag.getInt("apiRequests");
-        LocalDate nextReset = LocalDate.ofEpochDay(compoundTag.getLong("nextReset"));
+        syncState.apiRequests = compoundTag.getInt("apiRequests");
+        syncState.nextReset = LocalDate.ofEpochDay(compoundTag.getLong("nextReset"));
+        syncState.checkDateReset();
+        return syncState;
+    }
+
+    public void checkDateReset() {
         LocalDate currentDate = LocalDate.now(Clock.systemUTC());
         if(currentDate.isAfter(nextReset)) {
-            syncState.apiRequests.set(0);
-            syncState.nextReset = currentDate.plusDays(1);
-            syncState.setDirty();
-        } else {
-            syncState.apiRequests.set(previousQuota);
-            syncState.nextReset = nextReset;
+            apiRequests = 0;
+            nextReset = currentDate;
+            setDirty();
         }
-        return syncState;
     }
 
     public static SyncState getServerState(MinecraftServer server) {

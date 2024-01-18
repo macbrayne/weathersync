@@ -95,20 +95,10 @@ public class WeatherLocationCommand {
                             return 1;
                         }))
                 .then(Commands.literal("timer")
-                        .then(Commands.literal("reset")
-                                .requires(source -> source.hasPermission(2))
-                                .executes(ctx -> {
-                                    SyncState state = SyncState.getServerState(ctx.getSource().getServer());
-                                    state.lastSync = -1;
-                                    state.setDirty();
-                                    ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.timer.reset"), false);
-                                    return 1;
-                                }))
                         .then(Commands.literal("get")
                                 .executes(ctx -> {
-                                    SyncState state = SyncState.getServerState(ctx.getSource().getServer());
-                                    long timeLeft = ((state.lastSync - System.currentTimeMillis()) / 60 / 1000 + MAX_SYNC_FREQUENCY);
-                                    ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.timer.get", state.lastSync == -1 ? state.lastSync : timeLeft), false);
+                                    long timeLeft = (SyncState.ticksBetweenSyncs - ctx.getSource().getServer().getTickCount() % SyncState.ticksBetweenSyncs) / 20 / 60;
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.timer.get", timeLeft), false);
                                     return 1;
                                 })))
                 .then(Commands.literal("enable")
@@ -136,13 +126,11 @@ public class WeatherLocationCommand {
                             return 1;
                         }))
                 .then(Commands.literal("quota")
-                        .requires(source -> source.hasPermission(1))
                         .then(Commands.literal("get")
-                                .requires(source -> source.hasPermission(1))
                                 .executes(ctx -> {
                                     SyncState state = SyncState.getServerState(ctx.getSource().getServer());
-                                    String date = state.nextReset.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(Locale.ENGLISH));
-                                    ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.quota.get", state.apiRequests.get(), date), false);
+                                    String date = state.nextReset.plusDays(1).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(Locale.UK));
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("commands.weathersync.weathersync.quota.get", state.apiRequests, date), false);
                                     return 1;
                                 })))
                 .then(Commands.literal("credits")

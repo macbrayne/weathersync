@@ -50,7 +50,7 @@ public class DWDParser {
     public void request(ServerPlayer player, String latitude, String longitude) {
         LOGGER.debug("Uh oh, " + player.getName().getString() + " wants to know the weather!");
         SyncState state = SyncState.getServerState(player.getServer());
-        if(state.apiRequests.get() > 8_000) {
+        if(state.apiRequests > 8_000) {
             LOGGER.error("Daily API quota at 90%, stop syncing player weather");
             return;
         }
@@ -63,7 +63,7 @@ public class DWDParser {
 
     public static void requestCity(City city, MinecraftServer server) {
         List<ServerPlayer> players = server.getPlayerList().getPlayers();
-        commonRequest(server, city.latitude, city.longitude, City.getWeather(city), weatherData -> {
+        commonRequest(server, city.latitude, city.longitude, WeatherData.fromLocation(city.latitude, city.longitude), weatherData -> {
             City.updateWeather(city, weatherData);
             for(ServerPlayer player : players) {
                 LocationComponent location = Components.LOCATION.get(player);
@@ -85,7 +85,7 @@ public class DWDParser {
                 .build();
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(s -> DWDParser.parse(original, s, callback));
         SyncState state = SyncState.getServerState(server);
-        state.apiRequests.getAndIncrement();
+        state.apiRequests++;
         state.setDirty();
     }
 
